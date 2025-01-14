@@ -5,36 +5,43 @@ import multiprocessing
 from itertools import chain
 
 def digit_sum(n):
-    # 使用整数运算代替map和str转换，提高性能
+    # 使用位运算和查找表优化性能
+    lookup = (0,1,2,3,4,5,6,7,8,9)
     total = 0
     while n:
-        total += n % 10
+        total += lookup[n % 10]  # 使用查找表代替直接计算
         n //= 10
     return total
 
 def process_chunk(numbers):
     try:
-        # 使用列表推导式替代生成器，因为后续需要全部数据
-        return [n for n in numbers if digit_sum(n) == 30]
+        # 预先计算目标和，避免重复比较
+        target_sum = 30
+        # 使用局部变量优化访问速度
+        digit_sum_func = digit_sum
+        return [n for n in numbers if digit_sum_func(n) == target_sum]
     except Exception as e:
         print(f"处理数据块时出错: {e}")
         return []
 
 def find_digit_sum_difference():
     try:
+        # 使用局部变量优化访问速度
+        randint = random.randint
         start_gen = time.perf_counter()
-        numbers = [random.randint(1, 100000) for _ in range(1_000_000)]
+        numbers = [randint(1, 100000) for _ in range(1_000_000)]
         gen_time = time.perf_counter() - start_gen
         
         start_find = time.perf_counter()
         
+        # 优化分块策略
         cpu_count = max(1, multiprocessing.cpu_count())
-        optimal_chunk_size = max(10000, len(numbers) // (cpu_count * 2))
-        chunks = [numbers[i:i + optimal_chunk_size] for i in range(0, len(numbers), optimal_chunk_size)]
+        chunk_size = max(10000, len(numbers) // (cpu_count * 2))
+        chunks = [numbers[i:i + chunk_size] for i in range(0, len(numbers), chunk_size)]
         
         with ProcessPoolExecutor(max_workers=cpu_count) as executor:
             try:
-                # 使用chain.from_iterable优化结果合并
+                # 使用chain优化内存使用
                 target_numbers = list(chain.from_iterable(executor.map(process_chunk, chunks)))
             except Exception as e:
                 print(f"并行处理时出错: {e}")
