@@ -6,7 +6,7 @@ import concurrent.futures  # 添加导入
 
 
 def digit_sum(n):
-    """计算数字各位之和（优化版本）"""
+    #"""计算数字各位之和（优化版本）"""
     total = 0
     while n > 0:
         total += n % 10
@@ -14,8 +14,9 @@ def digit_sum(n):
     return total
 
 def process_chunk(numbers):
-    """处理数字块，返回符合条件的数字"""
-    return (n for n in numbers if digit_sum(n) == 30)
+    #"""Process a chunk of numbers and return those with digit sum of 30"""
+    # 使用生成器表达式来提高内存效率
+    return [n for n in numbers if digit_sum(n) == 30]
 
 def find_digit_sum_difference():
     # 记录生成随机数的时间
@@ -31,8 +32,10 @@ def find_digit_sum_difference():
     chunks = [numbers[i:i + chunk_size] for i in range(0, len(numbers), chunk_size)]
     
     with ProcessPoolExecutor() as executor:
+        # 提交任务到进程池
         futures = {executor.submit(process_chunk, chunk): chunk for chunk in chunks}
         target_numbers = []
+        # 处理已完成的任务
         for future in concurrent.futures.as_completed(futures):
             target_numbers.extend(future.result())
     
@@ -68,4 +71,4 @@ if __name__ == "__main__":
     # 输出性能分析 
     print("\n性能分析:")
     print(f"每秒处理数字数量: {1_000_000/total_time:.0f} 个/秒")
-    print(f"CPU核心数量: {multiprocessing.cpu_count()} 个") 
+    print(f"CPU核心数量: {multiprocessing.cpu_count()} 个")
