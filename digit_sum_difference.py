@@ -50,7 +50,7 @@ if __name__ == "__main__":
     random.seed(42)
     
     # 记录总运行时间
-    total_start = time.perf_counter()
+    total_start  = time.perf_counter()
     result, gen_time, find_time, calc_time, count = find_digit_sum_difference()
     total_time = time.perf_counter() - total_start
     
