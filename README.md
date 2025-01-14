@@ -44,7 +44,7 @@ Could not find platform independent libraries <prefix>
 ```
 这是Python多进程在Windows上的一个常见提示，不会影响程序的正常运行和结果，可以安全忽略。
 
-## 安装方法
+## 安装方法2
 
 1. 克隆仓库到本地：
 ```bash
