@@ -2,64 +2,67 @@ import random
 import time
 from concurrent.futures import ProcessPoolExecutor
 import multiprocessing
-import concurrent.futures  # 添加导入
-
+from itertools import chain
 
 def digit_sum(n):
-    #"""计算数字各位之和（优化版本）"""
+    # 使用整数运算代替map和str转换，提高性能
     total = 0
-    while n > 0:
+    while n:
         total += n % 10
         n //= 10
     return total
 
 def process_chunk(numbers):
-    #"""Process a chunk of numbers and return those with digit sum of 30"""
-    # 使用生成器表达式来提高内存效率
-    return [n for n in numbers if digit_sum(n) == 30]
+    try:
+        # 使用列表推导式替代生成器，因为后续需要全部数据
+        return [n for n in numbers if digit_sum(n) == 30]
+    except Exception as e:
+        print(f"处理数据块时出错: {e}")
+        return []
 
 def find_digit_sum_difference():
-    # 记录生成随机数的时间
-    start_gen = time.perf_counter()
-    numbers = [random.randint(1, 100000) for _ in range(1_000_000)]
-    gen_time = time.perf_counter() - start_gen
+    try:
+        start_gen = time.perf_counter()
+        numbers = [random.randint(1, 100000) for _ in range(1_000_000)]
+        gen_time = time.perf_counter() - start_gen
+        
+        start_find = time.perf_counter()
+        
+        cpu_count = max(1, multiprocessing.cpu_count())
+        optimal_chunk_size = max(10000, len(numbers) // (cpu_count * 2))
+        chunks = [numbers[i:i + optimal_chunk_size] for i in range(0, len(numbers), optimal_chunk_size)]
+        
+        with ProcessPoolExecutor(max_workers=cpu_count) as executor:
+            try:
+                # 使用chain.from_iterable优化结果合并
+                target_numbers = list(chain.from_iterable(executor.map(process_chunk, chunks)))
+            except Exception as e:
+                print(f"并行处理时出错: {e}")
+                return 0, gen_time, 0, 0, 0
+        
+        find_time = time.perf_counter() - start_find
+        
+        if not target_numbers:
+            print("警告：未找到符合条件的数字")
+            return 0, gen_time, find_time, 0, 0
+        
+        start_calc = time.perf_counter()
+        result = max(target_numbers) - min(target_numbers)
+        calc_time = time.perf_counter() - start_calc
+        
+        return result, gen_time, find_time, calc_time, len(target_numbers)
     
-    # 记录查找目标数字的时间
-    start_find = time.perf_counter()
-    
-    # 使用多进程并行处理
-    chunk_size = len(numbers) // multiprocessing.cpu_count()
-    chunks = [numbers[i:i + chunk_size] for i in range(0, len(numbers), chunk_size)]
-    
-    with ProcessPoolExecutor() as executor:
-        # 提交任务到进程池
-        futures = {executor.submit(process_chunk, chunk): chunk for chunk in chunks}
-        target_numbers = []
-        # 处理已完成的任务
-        for future in concurrent.futures.as_completed(futures):
-            target_numbers.extend(future.result())
-    
-    find_time = time.perf_counter() - start_find
-    
-    if not target_numbers:
-        return 0, gen_time, find_time, 0, len(target_numbers)
-    
-    # 记录计算最大最小值差的时间
-    start_calc = time.perf_counter()
-    result = max(target_numbers) - min(target_numbers)
-    calc_time = time.perf_counter() - start_calc
-    
-    return result, gen_time, find_time, calc_time, len(target_numbers)
+    except Exception as e:
+        print(f"程序执行出错: {e}")
+        return 0, 0, 0, 0, 0
 
 if __name__ == "__main__":
-    # 设置随机种子以确保结果可重现
+    random.seed(42)
     
-    # 记录总运行时间
-    total_start  = time.perf_counter()
+    total_start = time.perf_counter()
     result, gen_time, find_time, calc_time, count = find_digit_sum_difference()
     total_time = time.perf_counter() - total_start
     
-    # 打印详细的时间统计
     print(f"各位数字之和为30的最大数和最小数之差为: {result}")
     print(f"找到的符合条件的数字个数: {count}")
     print("\n运行时间统计:")
@@ -68,7 +71,6 @@ if __name__ == "__main__":
     print(f"计算最大最小值之差耗时: {calc_time:.4f} 秒")
     print(f"总运行时间: {total_time:.4f} 秒")
     
-    # 输出性能分析 
     print("\n性能分析:")
     print(f"每秒处理数字数量: {1_000_000/total_time:.0f} 个/秒")
     print(f"CPU核心数量: {multiprocessing.cpu_count()} 个")
