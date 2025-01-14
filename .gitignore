@@ -21,12 +21,16 @@ wheels/
 .installed.cfg
 *.egg
 
+# Virtual Environment
+venv/
+ENV/
+
 # IDE
 .idea/
 .vscode/
 *.swp
 *.swo
 
-# 操作系统
+# OS
 .DS_Store
 Thumbs.db 
