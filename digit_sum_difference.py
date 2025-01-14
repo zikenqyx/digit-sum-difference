@@ -2,6 +2,8 @@ import random
 import time
 from concurrent.futures import ProcessPoolExecutor
 import multiprocessing
+import concurrent.futures  # 添加导入
+
 
 def digit_sum(n):
     """计算数字各位之和（优化版本）"""
@@ -13,7 +15,7 @@ def digit_sum(n):
 
 def process_chunk(numbers):
     """处理数字块，返回符合条件的数字"""
-    return [n for n in numbers if digit_sum(n) == 30]
+    return (n for n in numbers if digit_sum(n) == 30)
 
 def find_digit_sum_difference():
     # 记录生成随机数的时间
@@ -29,10 +31,11 @@ def find_digit_sum_difference():
     chunks = [numbers[i:i + chunk_size] for i in range(0, len(numbers), chunk_size)]
     
     with ProcessPoolExecutor() as executor:
-        results = list(executor.map(process_chunk, chunks))
+        futures = {executor.submit(process_chunk, chunk): chunk for chunk in chunks}
+        target_numbers = []
+        for future in concurrent.futures.as_completed(futures):
+            target_numbers.extend(future.result())
     
-    # 合并所有结果
-    target_numbers = [num for chunk in results for num in chunk]
     find_time = time.perf_counter() - start_find
     
     if not target_numbers:
@@ -47,7 +50,6 @@ def find_digit_sum_difference():
 
 if __name__ == "__main__":
     # 设置随机种子以确保结果可重现
-    random.seed(42)
     
     # 记录总运行时间
     total_start  = time.perf_counter()
