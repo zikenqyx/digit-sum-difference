@@ -63,7 +63,7 @@ if __name__ == "__main__":
     print(f"计算最大最小值之差耗时: {calc_time:.4f} 秒")
     print(f"总运行时间: {total_time:.4f} 秒")
     
-    # 输出性能分析
+    # 输出性能分析 
     print("\n性能分析:")
     print(f"每秒处理数字数量: {1_000_000/total_time:.0f} 个/秒")
     print(f"CPU核心数量: {multiprocessing.cpu_count()} 个") 
